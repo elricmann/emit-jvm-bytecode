@@ -199,6 +199,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_bytecode_builder() {
+        let mut builder = BytecodeBuilder::new();
+
+        builder.emit_u8(opcodes::ALOAD_0);
+        builder.emit_u16(0x1234);
+        builder.emit_i32(0x12345678);
+
+        let bytes = builder.get_bytes();
+        assert_eq!(bytes[0], opcodes::ALOAD_0);
+        assert_eq!(bytes[1..3], [0x12, 0x34]);
+        assert_eq!(bytes[3..7], [0x12, 0x34, 0x56, 0x78]);
+    }
+
+    #[test]
     fn test_empty_class() -> io::Result<()> {
         let mut class_file = ClassFile::new();
 
