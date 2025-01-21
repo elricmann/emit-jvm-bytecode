@@ -213,6 +213,46 @@ mod tests {
     }
 
     #[test]
+    fn test_field() -> io::Result<()> {
+        let mut class_file = ClassFile::new();
+
+        let field = FieldInfo {
+            access_flags: 0x0001, // ACC_PUBLIC
+            name_index: 1,
+            descriptor_index: 2,
+            attributes_count: 0,
+            attributes: Vec::new(),
+        };
+
+        class_file.add_field(field);
+
+        assert_eq!(class_file.fields_count, 1);
+        assert_eq!(class_file.fields[0].access_flags, 0x0001);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_method() -> io::Result<()> {
+        let mut class_file = ClassFile::new();
+
+        let method = MethodInfo {
+            access_flags: 0x0001, // ACC_PUBLIC
+            name_index: 1,
+            descriptor_index: 2,
+            attributes_count: 0,
+            attributes: Vec::new(),
+        };
+
+        class_file.add_method(method);
+
+        assert_eq!(class_file.methods_count, 1);
+        assert_eq!(class_file.methods[0].access_flags, 0x0001);
+
+        Ok(())
+    }
+
+    #[test]
     fn test_empty_class() -> io::Result<()> {
         let mut class_file = ClassFile::new();
 
