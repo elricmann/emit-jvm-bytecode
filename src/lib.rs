@@ -327,4 +327,110 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_class_with_method() -> io::Result<()> {
+        let mut class_file = ClassFile::new();
+
+        let utf8_class = class_file.add_constant(1, {
+            let name = b"MethodTest";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let class_info = class_file.add_constant(7, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_class.to_be_bytes());
+            info
+        });
+
+        let utf8_object = class_file.add_constant(1, {
+            let name = b"java/lang/Object";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let object_class = class_file.add_constant(7, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_object.to_be_bytes());
+            info
+        });
+
+        let utf8_init = class_file.add_constant(1, {
+            let name = b"<init>";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let utf8_void_desc = class_file.add_constant(1, {
+            let desc = b"()V";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((desc.len() as u16).to_be_bytes()));
+            info.extend_from_slice(desc);
+            info
+        });
+
+        let name_and_type = class_file.add_constant(12, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_init.to_be_bytes());
+            info.extend_from_slice(&utf8_void_desc.to_be_bytes());
+            info
+        });
+
+        let utf8_code = class_file.add_constant(1, {
+            let name = b"Code";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        class_file.access_flags = 0x0021;
+        class_file.this_class = class_info;
+        class_file.super_class = object_class;
+
+        let mut builder = BytecodeBuilder::new();
+        builder.emit_u8(opcodes::ALOAD_0);
+        builder.emit_u8(opcodes::INVOKESPECIAL);
+        builder.emit_u16(name_and_type);
+        builder.emit_u8(opcodes::RETURN);
+
+        let code_bytes = builder.get_bytes();
+        let code_attr_length = 12 + code_bytes.len();
+
+        let constructor = MethodInfo {
+            access_flags: 0x0001,
+            name_index: utf8_init,
+            descriptor_index: utf8_void_desc,
+            attributes_count: 1,
+            attributes: vec![AttributeInfo {
+                attribute_name_index: utf8_code,
+                info: {
+                    let mut info = Vec::new();
+                    info.extend_from_slice(&((code_attr_length as u32).to_be_bytes()));
+                    info.extend_from_slice(&(1u16).to_be_bytes());
+                    info.extend_from_slice(&(1u16).to_be_bytes());
+                    info.extend_from_slice(&((code_bytes.len() as u32).to_be_bytes()));
+                    info.extend_from_slice(&code_bytes);
+                    info.extend_from_slice(&(0u16).to_be_bytes());
+                    info.extend_from_slice(&(0u16).to_be_bytes());
+                    info
+                },
+            }],
+        };
+
+        class_file.add_method(constructor);
+        class_file.constant_pool_count = class_file.constant_pool.len() as u16 + 1;
+
+        let test_path = "test/MethodTest.class";
+        write_bytecode(&class_file, test_path)?;
+
+        Ok(())
+    }
 }
