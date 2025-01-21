@@ -253,6 +253,32 @@ mod tests {
     }
 
     #[test]
+    fn test_constant_pool_entries() -> io::Result<()> {
+        let mut class_file = ClassFile::new();
+
+        // different types of constant pool entries
+
+        let utf8_entry = class_file.add_constant(1, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&(4u16).to_be_bytes());
+            info.extend_from_slice(b"Test");
+            info
+        });
+
+        let _class_entry = class_file.add_constant(7, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_entry.to_be_bytes());
+            info
+        });
+
+        assert_eq!(class_file.constant_pool_count, 3);
+        assert_eq!(class_file.constant_pool[0].tag, 1); // UTF-8
+        assert_eq!(class_file.constant_pool[1].tag, 7); // class
+
+        Ok(())
+    }
+
+    #[test]
     fn test_empty_class() -> io::Result<()> {
         let mut class_file = ClassFile::new();
 
