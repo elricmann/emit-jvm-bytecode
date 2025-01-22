@@ -2,6 +2,8 @@
 name = "emit-jvm-bytecode"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "Emit class files and JVM bytecode"
 
 [dependencies]
 byteorder = "1.5.0"
