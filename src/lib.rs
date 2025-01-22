@@ -653,4 +653,215 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_basic_program() -> io::Result<()> {
+        let mut class_file = ClassFile::new();
+
+        // 1. class name and Object class
+        let utf8_main_class = class_file.add_constant(1, {
+            let name = b"MainTest";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let main_class = class_file.add_constant(7, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_main_class.to_be_bytes());
+            info
+        });
+
+        let utf8_object = class_file.add_constant(1, {
+            let name = b"java/lang/Object";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let object_class = class_file.add_constant(7, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_object.to_be_bytes());
+            info
+        });
+
+        // 2. System.out reference
+        let utf8_system = class_file.add_constant(1, {
+            let name = b"java/lang/System";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let system_class = class_file.add_constant(7, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_system.to_be_bytes());
+            info
+        });
+
+        let utf8_out = class_file.add_constant(1, {
+            let name = b"out";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let utf8_printstream = class_file.add_constant(1, {
+            let name = b"Ljava/io/PrintStream;";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let out_field = class_file.add_constant(12, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_out.to_be_bytes());
+            info.extend_from_slice(&utf8_printstream.to_be_bytes());
+            info
+        });
+
+        let out_ref = class_file.add_constant(9, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&system_class.to_be_bytes());
+            info.extend_from_slice(&out_field.to_be_bytes());
+            info
+        });
+
+        // 3. println method reference
+        let utf8_println = class_file.add_constant(1, {
+            let name = b"println";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let utf8_println_desc = class_file.add_constant(1, {
+            let desc = b"(Ljava/lang/String;)V";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((desc.len() as u16).to_be_bytes()));
+            info.extend_from_slice(desc);
+            info
+        });
+
+        let println_method = class_file.add_constant(12, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_println.to_be_bytes());
+            info.extend_from_slice(&utf8_println_desc.to_be_bytes());
+            info
+        });
+
+        let utf8_printstream_class = class_file.add_constant(1, {
+            let name = b"java/io/PrintStream";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let printstream_class = class_file.add_constant(7, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_printstream_class.to_be_bytes());
+            info
+        });
+
+        let println_ref = class_file.add_constant(10, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&printstream_class.to_be_bytes());
+            info.extend_from_slice(&println_method.to_be_bytes());
+            info
+        });
+
+        // 4. "Hello, world!" string constant
+        let utf8_hello = class_file.add_constant(1, {
+            let text = b"Hello, world!";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((text.len() as u16).to_be_bytes()));
+            info.extend_from_slice(text);
+            info
+        });
+
+        let string_ref = class_file.add_constant(8, {
+            let mut info = Vec::new();
+            info.extend_from_slice(&utf8_hello.to_be_bytes());
+            info
+        });
+
+        // 5. main method
+        let utf8_main = class_file.add_constant(1, {
+            let name = b"main";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        let utf8_main_desc = class_file.add_constant(1, {
+            let desc = b"([Ljava/lang/String;)V";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((desc.len() as u16).to_be_bytes()));
+            info.extend_from_slice(desc);
+            info
+        });
+
+        // 6. code attribute
+        let utf8_code = class_file.add_constant(1, {
+            let name = b"Code";
+            let mut info = Vec::new();
+            info.extend_from_slice(&((name.len() as u16).to_be_bytes()));
+            info.extend_from_slice(name);
+            info
+        });
+
+        // class properties
+        class_file.access_flags = 0x0021; // PUBLIC | SUPER
+        class_file.this_class = main_class;
+        class_file.super_class = object_class;
+
+        /* main method bytecode */
+        let mut builder = BytecodeBuilder::new();
+        builder.emit_u8(opcodes::GETSTATIC);
+        builder.emit_u16(out_ref);
+        builder.emit_u8(opcodes::LDC);
+        builder.emit_u8(string_ref as u8);
+        builder.emit_u8(opcodes::INVOKEVIRTUAL);
+        builder.emit_u16(println_ref);
+        builder.emit_u8(opcodes::RETURN);
+
+        let code_bytes = builder.get_bytes();
+        let code_attr_length = 12 + code_bytes.len();
+
+        let main_method = MethodInfo {
+            access_flags: 0x0009, // PUBLIC | STATIC
+            name_index: utf8_main,
+            descriptor_index: utf8_main_desc,
+            attributes_count: 1,
+            attributes: vec![AttributeInfo {
+                attribute_name_index: utf8_code,
+                info: {
+                    let mut info = Vec::new();
+                    info.extend_from_slice(&((code_attr_length as u32).to_be_bytes()));
+                    info.extend_from_slice(&(2u16).to_be_bytes()); // max_stack - increased to 2
+                    info.extend_from_slice(&(1u16).to_be_bytes()); // max_locals - set to 1 for args array
+                    info.extend_from_slice(&((code_bytes.len() as u32).to_be_bytes()));
+                    info.extend_from_slice(&code_bytes);
+                    info.extend_from_slice(&(0u16).to_be_bytes()); // exception_table_length
+                    info.extend_from_slice(&(0u16).to_be_bytes()); // attributes_count
+                    info
+                },
+            }],
+        };
+
+        class_file.add_method(main_method);
+        class_file.constant_pool_count = class_file.constant_pool.len() as u16 + 1;
+
+        write_bytecode(&class_file, "test/MainTest.class")?;
+
+        Ok(())
+    }
 }
